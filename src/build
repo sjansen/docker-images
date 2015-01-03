@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+cd $(dirname "$0")
+export DEBIAN_FRONTEND=noninteractive
+
+wget -c https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.7/sbt-launch.jar
+mv sbt-launch.jar /
+
+cat > /usr/local/bin/sbt <<- EOF
+#!/bin/bash
+java -Xms512M -Xmx1536M -Xss1M \
+  -XX:+CMSClassUnloadingEnabled \
+  -Duser.home=/app \
+  -jar /sbt-launch.jar "\$@"
+EOF
+chmod a+x /usr/local/bin/sbt
+
+rm "$0"
+du -h /tmp /var/cache >&2

@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+NAMESPACE="sjansen"
+IMAGE=$(git rev-parse --abbrev-ref HEAD | tr / :)
+TAG="$NAMESPACE/$IMAGE"
+
+sudo docker build -t "$TAG" .

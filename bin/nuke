@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sudo docker ps -a \
+| awk '/Exited/{ print $1; }' \
+| xargs -r sudo docker rm
