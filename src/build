@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+cd $(dirname "$0")
+export DEBIAN_FRONTEND=noninteractive
+
+echo TODO >&2
+
+rm "$0"
+du -h /tmp /var/cache >&2
