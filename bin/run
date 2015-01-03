@@ -1,0 +1,62 @@
+#!/bin/bash
+set -e
+
+NAMESPACE="sjansen"
+IMAGE=$(git rev-parse --abbrev-ref HEAD | tr / :)
+TAG="$NAMESPACE/$IMAGE"
+
+function usage {
+  echo "usage: $0 [bash|cluster|cqlsh]"
+  exit
+}
+
+function main {
+  local -a LINKS
+  case "$1" in
+    '')
+      sudo mkdir -p /tmp/cass1
+      sudo chcon -Rt svirt_sandbox_file_t /tmp/cass1 || true
+      sudo docker run --name=cass1 --rm \
+        -p 127.0.0.1:7000:7000 \
+        -p 127.0.0.1:7001:7001 \
+        -p 127.0.0.1:7199:7199 \
+        -p 127.0.0.1:9042:9042 \
+        -p 127.0.0.1:9160:9160 \
+        -v /tmp/cass1:/var/lib/cassandra \
+        "$TAG"
+      ;;
+    bash)
+      if [ -z "$2" ]; then
+        sudo docker run -it --name=cass1 --rm "$TAG" /bin/bash
+      else
+        sudo docker exec -it "$2" /bin/bash
+      fi
+      ;;
+    cluster)
+      sudo docker run -d --name=cass1 \
+        -p 127.0.0.1:7000:7000 \
+        -p 127.0.0.1:7001:7001 \
+        -p 127.0.0.1:7199:7199 \
+        -p 127.0.0.1:9042:9042 \
+        -p 127.0.0.1:9160:9160 \
+        "$TAG"
+      sudo docker run -d --name=cass2 \
+        --link cass1:cass1 \
+        "$TAG"
+      sudo docker run --name=cass3 \
+        --link cass1:cass1 \
+        --link cass2:cass2 \
+        "$TAG" || true
+      sudo docker kill cass1 cass2 cass3
+      sudo docker rm cass1 cass2 cass3
+      ;;
+    cqlsh)
+      sudo docker exec -it "${2:-cass1}" bash -c 'cqlsh $(hostname)'
+      ;;
+    help|*)
+      usage
+      ;;
+  esac
+}
+
+main "$@"

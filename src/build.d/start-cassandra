@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+function join { local IFS="$1"; shift; echo "$*"; }
+
+IP=$(hostname --ip-address)
+SEEDS=${SEEDS:-$IP}
+
+ADDRS=( $(env | sed -r '/_PORT_9042_TCP_ADDR/{ s/^[^=]+=// ; p } ; d') )
+if [ 0 -lt ${#ADDRS[@]} ]; then
+  SEEDS="$SEEDS,$(join , ${ADDRS[@]})"
+fi
+
+sed -r -i -f - /etc/cassandra/cassandra.yaml <<-EOF
+  s/^listen_address.*/listen_address: $IP/
+  s/^rpc_address.*/rpc_address: $IP/
+  s/- seeds: "127.0.0.1"/- seeds: "$SEEDS"/
+EOF
+
+sed -r -i -f - /etc/cassandra/cassandra-env.sh <<- EOF
+  /java.rmi.server.hostname/{ s/^# // ; s/<public name>/$IP/ }
+EOF
+
+exec /usr/sbin/cassandra -f
