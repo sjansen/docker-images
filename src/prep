@@ -21,7 +21,7 @@ echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true \
 
 apt-get update
 apt-get -o Dpkg::Options::='--force-confold' dist-upgrade -y
-apt-get install -y oracle-java8-installer
+apt-get install -y ca-certificates oracle-java8-installer
 
 apt-get clean
 rm -rf /var/cache/oracle-jdk8-installer
